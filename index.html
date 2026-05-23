@@ -1,0 +1,719 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QXII | 数字化生活</title>
+    <style>
+        :root {
+            /* 严格 Apple 拟物液态与极简色彩体系 */
+            --color-bg: #f5f5f7;
+            --color-nav-bg: rgba(255, 255, 255, 0.45);
+            --color-nav-border: rgba(255, 255, 255, 0.5);
+            --color-text-primary: #1d1d1f;
+            --color-text-secondary: #6e6e73;
+            --color-link: #0071e3;
+            --color-card-bg: rgba(255, 255, 255, 0.55);
+            --color-card-border: rgba(255, 255, 255, 0.6);
+            --color-card-shadow: rgba(0, 0, 0, 0.03);
+            --color-card-shadow-hover: rgba(0, 0, 0, 0.08);
+            --color-divider: rgba(0, 0, 0, 0.06);
+            
+            /* 极致精细的造型与缓动参数 */
+            --radius-capsule: 30px;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --ease-apple: cubic-bezier(0.16, 1, 0.3, 1); /* 高级物理弹性缓动 */
+            --transition-smooth: all 0.6s var(--ease-apple);
+            --transition-quick: all 0.3s var(--ease-apple);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            line-height: 1.5;
+            letter-spacing: -0.022em;
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* --- 极富质感的液态背景装饰光晕 --- */
+        body::before, body::after {
+            content: "";
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(100px);
+            opacity: 0.45;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+        body::before {
+            background: radial-gradient(circle, #c9e2ff 0%, rgba(201,226,255,0) 70%);
+            top: 10%;
+            right: -100px;
+        }
+        body::after {
+            background: radial-gradient(circle, #fce1e4 0%, rgba(252,225,228,0) 70%);
+            bottom: 10%;
+            left: -100px;
+        }
+
+        /* --- 悬浮式胶囊形导航栏 --- */
+        header {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 760px;
+            z-index: 1000;
+            background: var(--color-nav-bg);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
+            border: 1px solid var(--color-nav-border);
+            border-radius: var(--radius-capsule);
+            box-shadow: 
+                0 4px 30px rgba(0, 0, 0, 0.03),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            transition: var(--transition-smooth);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 52px;
+            padding: 0 24px;
+        }
+
+        .logo {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            cursor: default;
+            color: var(--color-text-primary);
+            position: relative;
+        }
+
+        .logo::after {
+            content: "•";
+            color: var(--color-link);
+            margin-left: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--color-text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0.55;
+            transition: var(--transition-quick);
+            padding: 6px 12px;
+            border-radius: 14px;
+        }
+
+        .nav-links a:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .nav-links a.active {
+            opacity: 1;
+            background: #fff;
+            color: var(--color-text-primary);
+            box-shadow: 
+                0 2px 8px rgba(0,0,0,0.06),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+
+        /* --- 模块化视窗 --- */
+        .page {
+            display: none;
+            padding-top: 104px;
+            max-width: 760px;
+            margin: 0 auto;
+            min-height: calc(100vh - 160px);
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        /* 高级淡入过渡与微位移 */
+        .page.active {
+            display: block;
+            animation: appleFadeIn 0.7s var(--ease-apple) forwards;
+        }
+
+        @keyframes appleFadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(18px) scale(0.995); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+
+        /* --- Hero 视觉中心 --- */
+        .profile-hero {
+            text-align: center;
+            padding: 40px 24px 50px;
+        }
+
+        .avatar {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            margin-bottom: 24px;
+            object-fit: cover;
+            background-color: #fff;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 
+                0 12px 32px rgba(0,0,0,0.06),
+                0 2px 6px rgba(0,0,0,0.04);
+            transition: var(--transition-smooth);
+        }
+
+        .avatar:hover {
+            transform: scale(1.05) rotate(3deg);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.1),
+                0 4px 10px rgba(0,0,0,0.06);
+        }
+
+        .hero-name {
+            font-size: 40px;
+            font-weight: 800;
+            letter-spacing: -0.045em;
+            line-height: 1.15;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #1d1d1f 30%, #434348 90%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-bio {
+            font-size: 18px;
+            color: var(--color-text-secondary);
+            font-weight: 400;
+            letter-spacing: -0.015em;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* --- 液态高斯模糊卡片 --- */
+        .card {
+            background: var(--color-card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--color-card-border);
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            margin-bottom: 24px;
+            box-shadow: 
+                0 8px 32px var(--color-card-shadow),
+                inset 0 1px 1px rgba(255, 255, 255, 0.6);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 卡片上的高光细边 */
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card:hover {
+            transform: translateY(-4px) scale(1.006);
+            box-shadow: 
+                0 16px 40px var(--color-card-shadow-hover),
+                inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            margin-bottom: 18px;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 4px 10px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 8px;
+        }
+
+        /* --- 纵向模块大标题 --- */
+        .page-title {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.035em;
+            margin-bottom: 24px;
+            padding-left: 4px;
+            color: var(--color-text-primary);
+        }
+
+        /* --- 导航网格生态 --- */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 24px;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 16px rgba(0, 0, 0, 0.02),
+                inset 0 1px 1px rgba(255, 255, 255, 0.5);
+        }
+
+        .nav-item h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            letter-spacing: -0.015em;
+        }
+
+        .nav-item .read-btn {
+            font-size: 12px;
+            color: var(--color-link);
+            text-decoration: none;
+            margin-top: 8px;
+            display: inline-block;
+            font-weight: 500;
+            transition: var(--transition-quick);
+        }
+
+        .nav-item .read-btn:hover {
+            opacity: 0.8;
+            transform: translateX(2px);
+        }
+
+        .nav-item .visit-tag {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-link);
+            padding: 6px 14px;
+            background: rgba(0, 113, 227, 0.08);
+            border: 1px solid rgba(0, 113, 227, 0.1);
+            border-radius: 20px;
+            transition: var(--transition-quick);
+        }
+
+        .nav-item:hover .visit-tag {
+            background: var(--color-link);
+            border-color: var(--color-link);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 113, 227, 0.25);
+        }
+
+        /* --- 文章排版线 --- */
+        .article-content {
+            font-size: 15.5px;
+            line-height: 1.65;
+            color: var(--color-text-primary);
+        }
+
+        .article-content p {
+            margin-bottom: 20px;
+        }
+
+        .article-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .article-content a {
+            color: var(--color-link);
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1.5px solid rgba(0, 113, 227, 0.2);
+            transition: var(--transition-quick);
+        }
+
+        .article-content a:hover {
+            text-decoration: none;
+            border-bottom-color: var(--color-link);
+        }
+
+        .blog-item {
+            cursor: pointer;
+        }
+        
+        .blog-item h3 {
+            font-size: 21px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+            color: var(--color-text-primary);
+            transition: var(--transition-quick);
+        }
+
+        .blog-item:hover h3 {
+            color: var(--color-link);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 24px;
+            color: var(--color-link);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            transition: var(--transition-quick);
+        }
+
+        .back-link:hover {
+            transform: translateX(-4px);
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* --- 页脚信息弱化 --- */
+        footer {
+            text-align: center;
+            padding: 100px 24px 60px;
+            color: var(--color-text-secondary);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        footer p {
+            opacity: 0.6;
+            letter-spacing: -0.01em;
+        }
+
+        /* --- 响应式重排逻辑 --- */
+        @media (max-width: 768px) {
+            header {
+                top: 12px;
+                width: calc(100% - 24px);
+            }
+            .nav-container {
+                padding: 0 16px;
+                height: 48px;
+            }
+            .logo {
+                font-size: 15px;
+            }
+            .nav-links {
+                gap: 16px;
+            }
+            .nav-links a {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+            .page { 
+                padding: 84px 16px 40px; 
+            }
+            .nav-grid { 
+                grid-template-columns: 1fr; 
+                gap: 12px;
+            }
+            .hero-name { 
+                font-size: 32px; 
+            }
+            .hero-bio { 
+                font-size: 16px; 
+            }
+            .card { 
+                padding: 24px; 
+                margin-bottom: 18px;
+            }
+            .back-link {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="nav-container">
+            <div class="logo">QXII</div>
+            <ul class="nav-links">
+                <li><a href="#home" id="link-home">简介</a></li>
+                <li><a href="#blog" id="link-blog">动态</a></li>
+                <li><a href="#explore" id="link-explore">导航</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div id="home" class="page active">
+        <section class="profile-hero">
+            <img class="avatar" src="data:image/png;base64,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" alt="Converted Image">
+            <h1 class="hero-name">QXII</h1>
+            <p class="hero-bio">用极简的代码，构建跨越地域的数字自留地。追求极致，拒绝繁杂。</p>
+        </section>
+
+        <div class="card">
+            <span class="section-label">About Me / 简介</span>
+            <div class="article-content">
+                <p>在这个信息过载的时代，我始终坚持“Less is More”的原则。无论是代码还是生活，极致的精简往往蕴含着最高效的逻辑。</p>
+                <p>我喜欢研究 Serverless 架构，热衷于构建能够跨越地域限制的分布式网页矩阵。对我而言，喝一刻清茶、敲一段纯净的代码，就是最理想的创作状态。这个网站是我数字灵魂的投射，也是我与世界沟通的微小窗口。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="blog" class="page">
+        <h2 class="page-title">最近动态</h2>
+        
+        <div class="card blog-item" onclick="location.hash='#post-1'">
+            <span class="section-label">May 22, 2026</span>
+            <h3>为什么要追求极简顺滑？</h3>
+            <p style="color: var(--color-text-secondary); font-size: 15px;">探讨 Apple 设计语言背后的心理学暗示：为什么圆角与动效让我们感到舒适...</p>
+        </div>
+
+        <div class="card blog-item" onclick="location.hash='#post-2'">
+            <span class="section-label">May 20, 2026</span>
+            <h3>从 0 到 1 构建跨端导航矩阵</h3>
+            <p style="color: var(--color-text-secondary); font-size: 15px;">在国内与海外节点之间，如何建立一套高可用的个人网络服务体系...</p>
+        </div>
+
+        <div class="card blog-item" onclick="location.hash='#post-3'">
+            <span class="section-label">May 15, 2026</span>
+            <h3>喝茶、代码与禅宗</h3>
+            <p style="color: var(--color-text-secondary); font-size: 15px;">在繁杂的业务逻辑中，寻找那一丝平静的创作心流。关于个人效率的思考...</p>
+        </div>
+
+        <div class="card blog-item" onclick="location.hash='#post-4'">
+            <span class="section-label">May 23, 2026</span>
+            <h3>Cloudflare Pages 深度优化与避坑全指南</h3>
+            <p style="color: var(--color-text-secondary); font-size: 15px;">从零打磨极致免费静态站：性能优化、安全加固、国内访问加速的全套配置方案...</p>
+        </div>
+    </div>
+
+    <div id="explore" class="page">
+        <h2 class="page-title">数字矩阵</h2>
+        
+        <div class="card">
+            <span class="section-label">Domestic / 国内直连</span>
+            <div class="nav-grid">
+                <div class="nav-item">
+                    <div>
+                        <h4>极简游戏</h4>
+                        <a href="#post-site-1" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://www.qxii.p8.ink" target="_blank" style="text-decoration: none;"><span class="visit-tag">Visit</span></a>
+                </div>
+                <div class="nav-item">
+                    <div>
+                        <h4>游戏门户</h4>
+                        <a href="#post-site-2" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://door.qxii.p8.ink" target="_blank" style="text-decoration: none;"><span class="visit-tag">Visit</span></a>
+                </div>
+                <div class="nav-item">
+                    <div>
+                        <h4>娱乐仓库</h4>
+                        <a href="#post-site-3" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://play.qxii.p8.ink" target="_blank" style="text-decoration: none;"><span class="visit-tag">Visit</span></a>
+                </div>
+                <div class="nav-item">
+                    <div>
+                        <h4>打招呼</h4>
+                        <a href="#post-site-4" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://class.qxii.p8.ink" target="_blank" style="text-decoration: none;"><span class="visit-tag">Visit</span></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <span class="section-label">Global / 海外节点</span>
+            <div class="nav-grid">
+                <div class="nav-item">
+                    <div>
+                        <h4>QXII.Netlify</h4>
+                        <a href="#post-site-5" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://qxii.netlify.app" target="_blank" style="text-decoration: none;"><span class="visit-tag">OS</span></a>
+                </div>
+                <div class="nav-item">
+                    <div>
+                        <h4>QIIX.Netlify</h4>
+                        <a href="#post-site-6" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://qiix.netlify.app" target="_blank" style="text-decoration: none;"><span class="visit-tag">OS</span></a>
+                </div>
+                <div class="nav-item">
+                    <div>
+                        <h4>QXII.CT</h4>
+                        <a href="#post-site-7" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://qxii.ct.ws" target="_blank" style="text-decoration: none;"><span class="visit-tag">OS</span></a>
+                </div>
+                <div class="nav-item">
+                    <div>
+                        <h4>Cloudflare</h4>
+                        <a href="#post-site-8" class="read-btn">阅读简介 →</a>
+                    </div>
+                    <a href="https://door.qxii.workers.dev" target="_blank" style="text-decoration: none;"><span class="visit-tag">OS</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-view" class="page">
+        <a href="#explore" id="back-link" class="back-link">← 返回</a>
+        <div class="card" style="margin-top: 10px;">
+            <h1 id="post-title" style="font-size: 32px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 24px;"></h1>
+            <div id="post-body" class="article-content"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Copyright © 2026 QXII. All Rights Reserved.</p>
+        <p style="margin-top: 6px; opacity: 0.4;">Designed with Apple Minimalism Style.</p>
+    </footer>
+
+    <script>
+        const blogPosts = {
+            'post-1': {
+                title: '为什么要追求极简顺滑？',
+                content: '<p>极简主义不代表“简陋”，而代表“意图”。Apple 的设计语言之所以顺滑，是因为它模拟了物理世界的惯性。每一个圆角（Squircle）都比普通的圆角矩形更符合人类的视觉曲线。</p><p>在网页开发中，加入适当的贝塞尔曲线过渡，不仅是视觉的享受，更是引导用户专注内容的核心手段。</p>'
+            },
+            'post-2': {
+                title: '从 0 到 1 构建跨端导航矩阵',
+                content: '<p>在这个碎片化的互联网时代，我们将服务部署在不同的节点上：国内域名提供极致的访问速度，海外节点（如 Netlify, Cloudflare）提供无限的扩展性。</p><p>我的导航矩阵不仅是链接的跳转，更是一个分布式的存储实验，确保在任何网络环境下，我的数字资产都能被触达。</p>'
+            },
+            'post-3': {
+                title: '喝茶、代码与禅宗',
+                content: '<p>创作的时候，我习惯在手边放一盏清茶。茶叶在水中舒展的过程，就像代码在 IDE 中逻辑自洽的过程。不要急于写完所有的功能，而是像品茶一样，思考每一行代码存在的必要性。</p><p>代码若有灵性，它也应该喜欢这种安静的节奏。</p>'
+            },
+            'post-4': {
+                title: '从零打磨极致免费静态站：Cloudflare Pages 深度优化与避坑全指南',
+                content: '<p>对于个人开发者、极客爱好者而言，搭建稳定、高速、免费且无需备案的静态站点，是刚需中的刚需。在众多免费托管平台中，Cloudflare Pages 凭借<strong>零额度限制、全球 CDN 加速、自动 CI/CD、免费 SSL 证书</strong>等核心优势，成为绝大多数人的首选方案。</p><p>但很多开发者仅停留在「代码上传、自动部署」的基础使用层面，忽略了大量隐藏优化配置。原生默认配置下的 Pages 站点，普遍存在首屏加载慢、静态资源缓存混乱、海外节点波动、自定义域名解析异常等隐性问题。</p><p>今天这篇博客，我将结合百次实操踩坑经验，完整拆解 Cloudflare Pages 从<strong>零基础部署、性能极致优化、安全加固、常见问题避坑</strong>的全套极客配置方案，帮你把免费静态站的性能与稳定性拉满。</p><h2>一、为什么优先选 Cloudflare Pages？（极客视角横向对比）</h2><p>目前主流免费静态托管平台各有短板，对比之下 Cloudflare Pages 的适配性遥遥领先，也是我长期自用的核心原因：</p><ol><li><strong>Vercel</strong>：国内访问波动极大，无自定义节点，高峰期丢包、超时频发，免费额度有隐性流量限制；</li><li><strong>Netlify</strong>：部署速度慢，免费版带宽有限，高频访问容易限流，国内加载速度堪忧；</li><li><strong>21 云盒 / 阿里云静态托管</strong>：需要实名认证，部分场景需备案，商业化属性强，免费功能阉割严重；</li><li><strong>Cloudflare Pages</strong>：<strong>永久免费、无流量上限、无需备案、全球 300 + 节点</strong>，支持 Git 自动部署、自定义规则、缓存优化、脚本注入，完全满足个人博客、项目展示、工具站、文档站等所有静态场景。</li></ol><p>唯一的短板是<strong>默认配置不适配国内网络环境</strong>，这也是我们后续优化的核心切入点。</p><h2>二、零基础极速部署：5 分钟完成站点上线</h2><h3>1. 部署前置条件</h3><ul><li>任意 Git 仓库（GitHub/Gitee/GitLab 均可，国内用户优先 Gitee，部署速度更快）；</li><li>静态站点文件（HTML/CSS/JS、静态图片、markdown 渲染站点均可）；</li><li>可选：自定义域名（无域名也可使用系统默认 pages.dev 域名直接访问）。</li></ul><h3>2. 核心部署流程</h3><ol><li>登录 Cloudflare 控制台，侧边栏找到「Pages」，点击「创建项目」；</li><li>关联你的 Git 仓库，选择需要部署的项目分支（默认 main/master 分支）；</li><li>基础配置无需修改：框架预设选择「无框架」，构建命令留空，输出目录填写<code>/</code>；</li><li>点击部署，等待 1-3 分钟，系统自动完成代码拉取、打包、发布；</li><li>部署成功后，即可通过默认的<code>xxx.pages.dev</code>域名访问站点。</li></ol><p><strong>极客小技巧</strong>：开启「自动部署」后，后续只要推送代码到远程仓库，系统会自动增量部署，无需手动操作，适配日常迭代更新。</p><h2>三、极致性能优化：解决国内访问慢、加载卡顿问题</h2><p>默认部署后的站点，海外访问速度拉满，但国内打开经常出现白屏、资源加载超时、首屏耗时久的问题。以下是实测有效的全套优化方案。</p><h3>1. 静态资源缓存规则优化（核心优化）</h3><p>默认缓存规则会导致 CSS、JS、图片资源频繁重新加载，极大影响重复访问速度。我们通过自定义页面规则强制长效缓存：</p><ol><li>进入 Cloudflare 控制台「规则 - 页面规则」，创建新规则；</li><li>匹配地址：<code>*你的域名/*.(css|js|png|jpg|jpeg|gif|ico|svg)</code>；</li><li>配置项：<ul><li>缓存级别：标准缓存；</li><li>浏览器缓存 TTL：4 小时；</li><li>边缘缓存 TTL：7 天；</li><li>开启「始终缓存」。</li></ul></li></ol><p>该配置可大幅减少重复请求，静态资源一次加载、长期生效，首屏速度提升 60% 以上。</p><h3>2. 开启性能加速组件</h3><p>在 Pages 项目设置中，手动开启三大核心功能：</p><ul><li><strong>自动最小化代码</strong>：压缩 HTML、CSS、JS 代码，精简冗余字符，减小文件体积；</li><li><strong>Brotli 压缩</strong>：比 Gzip 压缩率更高，可压缩 30% 以上文本资源，加载速度大幅提升；</li><li><strong>延迟加载图片</strong>：自动对页面图片开启懒加载，优先加载首屏内容，杜绝空白屏。</li></ul><h3>3. 规避节点污染，固定优选线路</h3><p>很多用户站点卡顿的核心原因是 Cloudflare 自动分配的节点质量差。优化方案：关闭「智能路由」，手动优选国内稳定节点线路，同时开启「0 EPNL 模式」，减少节点跳转延迟，彻底解决随机卡顿、超时问题。</p><h2>四、安全加固配置：防爬虫、防恶意访问、防盗链</h2><p>免费站点最容易被爬虫刷流量、恶意 IP 攻击、图片盗链，简单几步即可完成安全防护。</p><h3>1. 开启基础安全防护</h3><ul><li>开启「浏览器完整性检查」，拦截恶意爬虫、脚本访问；</li><li>安全等级设置「中等」，自动拦截高频异常请求；</li><li>开启 DDoS 基础防护，抵御小型流量攻击。</li></ul><h3>2. 配置图片防盗链</h3><p>通过页面规则设置 Referer 白名单，仅允许自身域名加载资源：</p><ul><li>匹配地址：<code>*你的域名/*.(png|jpg|jpeg|gif)</code>；</li><li>禁止空 Referer 访问，拦截第三方站点盗链，节省无形流量资源。</li></ul><h3>3. 屏蔽无效爬虫</h3><p>在站点根目录新建<code>robots.txt</code>，屏蔽百度、搜狗等无效爬虫，减少服务器压力，避免垃圾流量堆积：</p><pre><code>User-agent: Baiduspider\nDisallow: /\n\nUser-agent: Sogouspider\nDisallow: /</code></pre><h2>五、高频踩坑避坑指南（90% 开发者都会遇到）</h2><p>结合长期实操经验，整理最常见的 5 个问题及精准解决方案：</p><h3>1. 问题一：国内访问白屏、资源 404</h3><p><strong>原因</strong>：默认节点适配海外网络，国内 DNS 解析异常<br/><strong>解决方案</strong>：手动修改优选 IP，替换系统默认解析节点，刷新本地 DNS 缓存。</p><h3>2. 问题二：自动部署失败、代码推送无更新</h3><p><strong>原因</strong>：Git 仓库权限不足、缓存残留<br/><strong>解决方案</strong>：重新授权仓库权限，在 Pages 设置中清除构建缓存，重新部署即可。</p><h3>3. 问题三：自定义域名 HTTPS 失效</h3><p><strong>原因</strong>：SSL 证书未自动下发<br/><strong>解决方案</strong>：将 SSL/TLS 加密模式改为「全程」，等待 10 分钟证书自动更新。</p><h3>4. 问题四：站点更新后浏览器不刷新</h3><p><strong>原因</strong>：本地缓存强制生效<br/><strong>解决方案</strong>：给静态资源添加时间戳，同时调整浏览器缓存 TTL，平衡缓存速度与更新时效。</p><h3>5. 问题五：移动端访问适配错乱</h3><p><strong>原因</strong>：CDN 压缩规则冲突<br/><strong>解决方案</strong>：关闭移动端自动优化，手动适配页面响应式布局。</p><h2>六、极客进阶玩法：解锁 Pages 隐藏能力</h2><p>除了基础托管，Cloudflare Pages 还支持超多高阶玩法，彻底盘活免费资源：</p><ol><li><strong>结合 Cloudflare Workers</strong>：实现接口转发、访问统计、密码加密、站点鉴权，静态站实现动态功能；</li><li><strong>绑定免费域名</strong>：搭配 Freenom 免费域名，实现零成本完整站点搭建；</li><li><strong>多环境部署</strong>：配置预览分支，实现测试环境、正式环境分离，迭代更规范；</li><li><strong>日志监控</strong>：开启访问日志，实时查看站点访问量、异常请求、IP 来源，精准监控站点状态。</li></ol><h2>七、总结</h2><p>Cloudflare Pages 绝对是<strong>个人极客、开发者小众项目的最优免费静态托管方案</strong>。它没有额度套路、无需备案、功能强大，唯一的不足就是默认配置不适配国内网络。</p><p>只要完成本文的「性能优化 + 安全加固 + 避坑配置」全套操作，你的免费静态站可以实现<strong>国内秒开、稳定不掉线、安全防攻击</strong>，完全可以替代付费托管服务，适配个人博客、项目展示、工具文档、作品集等所有场景。</p><p>对于追求极致性价比、喜欢折腾优化的开发者来说，吃透 Cloudflare Pages 的配置细节，就是用免费资源实现专业站点体验的最佳方式。</p><p>后续我会持续更新 Cloudflare 生态进阶玩法、静态站自动化部署、Workers 脚本开发等极客干货，欢迎持续关注。</p>'
+            },
+            'post-site-1': {
+                title: '极简游戏：纯粹交互的自留地',
+                content: '<p>网址：<a href="https://www.qxii.p8.ink" target="_blank">www.qxii.p8.ink</a></p><p>打消了繁杂的注册流程与冗余的商业弹窗，这个站点是为了让游戏回归其最本质的快乐而生。基于纯原生 HTML5 与轻量级 JavaScript 构建，确保用户的每一次点击都能获得毫无延迟的毫秒级响应。在这里，我们用代码的极简主义，换取体验的最大化。</p>'
+            },
+            'post-site-2': {
+                title: '游戏门户：矩阵生态的核心枢纽',
+                content: '<p>网址：<a href="https://door.qxii.p8.ink" target="_blank">door.qxii.p8.ink</a></p><p>如果分散的站点是星辰，那么游戏门户就是连接一切的星系轨道。通过优雅的响应式网格布局，它将所有的独立游戏与应用模块聚合在一个统一的视界中。它不仅提供入口分发，更承载着整个国内直连网络节点的状态索引与流量调度。</p>'
+            },
+            'post-site-3': {
+                title: '娱乐仓库：治愈系数字角落',
+                content: '<p>网址：<a href="https://play.qxii.p8.ink" target="_blank">play.qxii.p8.ink</a></p><p>在这个快节奏的数字时代，人们需要一个可以放空大脑的避风港。娱乐仓库收集了从环境白噪音到各种解压微交互的奇思妙想。没有通关压力，没有成就系统，只有纯粹的视觉与听觉反馈，是一处理想的线上休憩之所。</p>'
+            },
+            'post-site-4': {
+                title: '打招呼：重构网络破冰仪式',
+                content: '<p>网址：<a href="https://class.qxii.p8.ink" target="_blank">class.qxii.p8.ink</a></p><p>这是一场关于人机交互温度的轻量级实验。当你触碰这个页面时，它会以极其流畅的字体动效和极简文案，向造访者传递最质朴的问候。它探讨了在信息泛滥的今天，如何用最少的代码传递最纯粹的情感波动。</p>'
+            },
+            'post-site-5': {
+                title: 'QXII.Netlify：Jamstack 边缘防线',
+                content: '<p>网址：<a href="https://qxii.netlify.app" target="_blank">qxii.netlify.app</a></p><p>部署于全球顶尖静态托管平台的海外主节点。它深度实践了现代 Web 开发的 Jamstack 理念，通过 GitHub 自动化构建流水线与全球 CDN 加速，提供了几乎不可摧毁的高可用性和极致的静态资产分发效率。</p>'
+            },
+            'post-site-6': {
+                title: 'QIIX.Netlify：主节点的暗影双生',
+                content: '<p>网址：<a href="https://qiix.netlify.app" target="_blank">qiix.netlify.app</a></p><p>架构的稳健性源自于完善的灾备机制。作为主节点的“影子镜像”，这里承载着新特性代码的灰度测试与 A/B 实验任务。当主链路遭遇不可抗力的波动时，它能迅速无缝接管流量，确保矩阵服务的永续运行。</p>'
+            },
+            'post-site-7': {
+                title: 'QXII.CT：对古典 Web 时代的浪漫致敬',
+                content: '<p>网址：<a href="https://qxii.ct.ws" target="_blank">qxii.ct.ws</a></p><p>在云原生时代，运行在传统 PHP 虚拟空间上的站点更像是一片带着极客情怀的自留地。它保留了对后端脚本的动态解析能力与文件系统的原生掌控权，代表了对古典互联网自由精神的坚持与探索。</p>'
+            },
+            'post-site-8': {
+                title: 'Cloudflare Workers：无服务器网关',
+                content: '<p>网址：<a href="https://door.qxii.workers.dev" target="_blank">door.qxii.workers.dev</a></p><p>这是整个架构中最具科技感的一环。彻底抛弃了传统的操作系统概念，代码直接被注入到 Cloudflare 的全球 V8 边缘计算网络内存中。它以不足一毫秒的延迟进行流量清洗与智能路由重定向，是连接所有海外节点的高维总枢纽。</p>'
+            }
+        };
+
+        function router() {
+            const hash = window.location.hash || '#home';
+            const pages = document.querySelectorAll('.page');
+            const links = document.querySelectorAll('.nav-links a');
+
+            pages.forEach(p => p.classList.remove('active'));
+            links.forEach(l => l.classList.remove('active'));
+
+            if (hash.startsWith('#post-')) {
+                const postId = hash.replace('#', '');
+                const post = blogPosts[postId];
+                if (post) {
+                    document.getElementById('post-view').classList.add('active');
+                    document.getElementById('post-title').innerText = post.title;
+                    document.getElementById('post-body').innerHTML = post.content;
+                    
+                    const backLink = document.getElementById('back-link');
+                    if (postId.includes('site-')) {
+                        backLink.href = '#explore';
+                        backLink.innerText = '← 返回数字矩阵';
+                    } else {
+                        backLink.href = '#blog';
+                        backLink.innerText = '← 返回最近动态';
+                    }
+                }
+            } else {
+                const targetPage = document.querySelector(hash);
+                if (targetPage) targetPage.classList.add('active');
+                
+                const activeLink = document.getElementById('link-' + hash.replace('#', ''));
+                if (activeLink) activeLink.classList.add('active');
+            }
+            window.scrollTo(0, 0);
+        }
+
+        window.addEventListener('hashchange', router);
+        window.addEventListener('load', router);
+    </script>
+</body>
+</html>
+
+```
