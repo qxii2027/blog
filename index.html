@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QXII 's Space | 个人主页</title>
+    <style>
+        /* --- 现代精致 UI 变量设计 --- */
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #6366f1;
+            --primary-light: #eef2ff;
+            --accent-cn: #10b981;
+            --accent-cn-light: #ecfdf5;
+            --accent-os: #f59e0b;
+            --accent-os-light: #fffbeb;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- 基础样式复位 --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+        }
+
+        /* --- 导航栏 UI --- */
+        header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .nav-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        /* --- 核心多页面路由控制 --- */
+        .page {
+            display: none;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 24px;
+            animation: fadeIn 0.4s ease;
+            min-height: 75vh;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- 极简主页 UI --- */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: radial-gradient(circle at top right, var(--primary-light), transparent 60%);
+            border-radius: var(--radius);
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+            color: #0f172a;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+            color: white;
+        }
+
+        /* --- 网址导航与博客流 UI --- */
+        .section-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 40px 0 20px;
+            position: relative;
+            padding-left: 14px;
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 5px;
+            border-radius: 4px;
+        }
+
+        .cn-title::before { background-color: var(--accent-cn); }
+        .os-title::before { background-color: var(--accent-os); }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .custom-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .custom-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .card-tag {
+            align-self: flex-start;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .tag-cn { color: var(--accent-cn); background: var(--accent-cn-light); }
+        .tag-os { color: var(--accent-os); background: var(--accent-os-light); }
+
+        .custom-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .custom-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 14px;
+        }
+
+        .btn-visit {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .btn-visit:hover { color: var(--primary); }
+
+        .btn-read {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 6px 14px;
+            border-radius: 8px;
+        }
+        .btn-read:hover { background: var(--primary); color: white; }
+
+        /* --- 独立文章排版 UI --- */
+        .post-container {
+            background: var(--bg-card);
+            padding: 40px 50px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .post-header {
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 24px;
+            margin-bottom: 30px;
+        }
+
+        .post-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .post-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.3;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        .post-meta {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 16px;
+        }
+
+        .post-content p {
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            color: #334155;
+            text-align: justify;
+        }
+
+        .post-content blockquote {
+            border-left: 4px solid var(--primary);
+            background: var(--primary-light);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 24px 0;
+            font-style: italic;
+            color: #4338ca;
+        }
+
+        /* --- 页脚 --- */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 80px;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .post-container { padding: 24px; }
+            .post-title { font-size: 1.6rem; }
+            .hero h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="nav-container">
+            <div class="logo">QXII 's Space</div>
+            <ul class="nav-links">
+                <li><a href="#home" id="nav-home" class="active">首页</a></li>
+                <li><a href="#explore" id="nav-explore">网址导航</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div id="home" class="page active">
+        <section class="hero">
+            <h1>构建纯粹的数字理想乡</h1>
+            <p>这里是 QXII 的内容中枢。整合海内外矩阵节点，打破物理壁垒，沉淀极简游戏、开发运维与全栈探索的独立思想空间。</p>
+            <a href="#explore" class="cta-btn">进入网络矩阵</a>
+        </section>
+    </div>
+
+    <div id="explore" class="page">
+        <h2 class="section-title cn-title">国内直连节点</h2>
+        <div class="card-grid">
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-cn">极简游戏</span>
+                    <h3>极简游戏网站</h3>
+                    <p>追求纯粹交互、无冗余代码的轻量化独立游戏空间。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://www.qxii.p8.ink" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-qxii-p8" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-cn">综合入口</span>
+                    <h3>游戏门户</h3>
+                    <p>聚合核心玩法生态链，连接前沿玩家的内容中转枢纽。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://door.qxii.p8.ink" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-door-p8" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-cn">泛娱乐</span>
+                    <h3>娱乐仓库</h3>
+                    <p>音视频、趣味H5与解压实验室的数字化收藏架。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://play.qxii.p8.ink" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-play-p8" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-cn">社交交互</span>
+                    <h3>打招呼</h3>
+                    <p>打破社交破冰僵局的轻量级创意数字问候空间。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://class.qxii.p8.ink" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-class-p8" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title os-title">海外/需要外网访问</h2>
+        <div class="card-grid">
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-os">Netlify 节点 A</span>
+                    <h3>qxii.netlify.app</h3>
+                    <p>基于 Jamstack 架构构建的海外静态主节点，高稳定性保障。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://qxii.netlify.app" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-qxii-netlify" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-os">Netlify 节点 B</span>
+                    <h3>qiix.netlify.app</h3>
+                    <p>作为高可用容灾备份与分布式灰度发布测试的动态沙盒。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://qiix.netlify.app" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-qiix-netlify" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-os">免费托管</span>
+                    <h3>qxii.ct.ws</h3>
+                    <p>对传统自由Web生态体系的探索，轻量级弹性边缘空间。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://qxii.ct.ws" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-qxii-ct" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+            <div class="custom-card">
+                <div>
+                    <span class="card-tag tag-os">Edge Workers</span>
+                    <h3>door.qxii.workers.dev</h3>
+                    <p>运行于 Cloudflare 全球边缘网络的无服务器（Serverless）高并发网关。</p>
+                </div>
+                <div class="card-actions">
+                    <a href="https://door.qxii.workers.dev" target="_blank" class="btn-visit">直达站点 →</a>
+                    <a href="#post-door-workers" class="btn-read">阅读评测</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-qxii-p8" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">减法艺术的终极呈现：极简游戏网站深度解析</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：国内直连 / 游戏</span></div>
+            </div>
+            <div class="post-content">
+                <p>在如今充满商业广告和繁琐日常任务的网游时代，<b>www.qxii.p8.ink</b> 诞生之初就背负着一种返璞归真的使命：摒弃无意义的注册、剔除加载动画，让游戏回归其最本质的快乐。</p>
+                <blockquote>“极简不仅是视觉的干净，更是代码的克制和心流的完整。”</blockquote>
+                <p>该站主要依托原生 HTML5 Canvas 与极简 JavaScript 逻辑构建。在这里，你找不到数百MB的资源包，只有几KB的精妙算法。每个小游戏都专注于一种核心机制——无论是考验微操的物理碰撞，还是激荡脑力的逻辑解谜，都能在用户打开网页的0.1秒内立刻呈现。</p>
+                <p>在网络架构上，通过国内多线BGP直连优化，确保了高频交互动作下的零延迟。这不仅是一个游戏站，更是一部向纯粹代码美学致敬的实验性作品。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-door-p8" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">生态聚合与玩家枢纽：构建 door.qxii.p8.ink 统一大门</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：国内直连 / 架构</span></div>
+            </div>
+            <div class="post-content">
+                <p>如果说分散的单个游戏是繁星，那么 <b>door.qxii.p8.ink</b> 就是那条连接所有星系的核心通道。作为“游戏门户”节点，它充当了整个 P8 域名的流量分发与生态整合中转中心。</p>
+                <p>技术层面上，该门户采用了异步加载（AJAX）与响应式网格布局。无论是在PC端高分屏还是在移动端，用户都可以通过优雅的卡片流，直观、清晰地检索到目前集群中运行的所有在线项目。它极大地提升了玩家在不同独立游戏之间自由跳跃的体验。</p>
+                <p>未来，该门户将计划引入基于浏览器的轻量化数据持久化机制（LocalStorage），允许玩家在无需注册账号的前提下，跨页面无缝保存各游戏节点的通关分数和成就状态。让大门不仅提供连接，更提供记忆。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-play-p8" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">数字化解压实验室：探秘 play.qxii.p8.ink 娱乐仓库</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：国内直连 / 泛娱乐</span></div>
+            </div>
+            <div class="post-content">
+                <p>在快节奏的互联网生活中，人们急需一个不需要动脑、能够迅速获得正向反馈的心灵缓冲带。<b>play.qxii.p8.ink</b> 娱乐仓库就是为此而打造的私房数字基地。</p>
+                <p>在这里，不仅有小游戏的容身之所，还包罗了许多充满趣味的奇效工具：生成白噪音的声景混音器、鼠标跟随的粒子特效画布、甚至是一个随机触发搞笑文案的解压按键。所有功能的共同目标只有两个字——“解压”。</p>
+                <blockquote>“仓库存在的意义，在于给疲惫的冲浪者提供一片停泊的浅滩。”</blockquote>
+                <p>在 UI 交互层，娱乐仓库大量采用了柔和的毛玻璃特效和微交互动画，从视觉和听觉上给使用者提供全方位的舒适和沉浸感。国内骨干网的直连加持，也确保了这些媒体资源的顺畅加载。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-class-p8" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">重塑网络破冰美学：当我们在 class.qxii.p8.ink 说“你好”</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：国内直连 / 社交实验</span></div>
+            </div>
+            <div class="post-content">
+                <p>社交的起点往往是一句最朴素的“你好”，但信息冗余时代让打招呼变得越来越沉重。<b>class.qxii.p8.ink</b> 是一个充满趣味的轻量级数字交互艺术实验。</p>
+                <p>该站点探讨了人与网页之间最本真的问候形式。当你每次刷新或触碰屏幕时，它都会通过简洁的动效与字体设计，向造访者回馈一句独一无二的随机问候语。它可能是赛博朋克风的机械致敬，也可能是如沐春风的古典祝愿。</p>
+                <p>通过该页面，我们可以观察到精简代码如何通过简单的条件触发器传递情感温度。无需繁琐的输入，只需一次点击，互联网那一端的“阶级/班级（Class）”空间便向你展现了最真挚的赛博礼仪。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-qxii-netlify" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">海外主节点的坚守：qxii.netlify.app 静态工程实践</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：海外节点 / Jamstack</span></div>
+            </div>
+            <div class="post-content">
+                <p>当目光移向海外集群，依托全球顶尖静态托管平台平台构建的 <b>qxii.netlify.app</b> 无疑是整个矩阵的核心基石。它是多端同步、自动化流水线部署的典范。</p>
+                <p>该节点深度实践了现代 Web 开发的 Jamstack 理念。通过与 GitHub 仓库无缝双向绑定，每当本地源码发生更新并提交，Netlify 位于北美的边缘计算集群就会自动拉取、构建并进行全球 CDN 节点的增量分发。这彻底告别了传统服务器频繁死机和高额维护费的困扰。</p>
+                <p>虽然由于跨境网络波动，部分国内用户需要借助外部网络工具才能实现全速访问，但其所带来的极致安全防注入性能和高达99.99%的全球高可用可用率，使得它成为了存储重要数据、进行长文输出的绝佳主港湾。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-qiix-netlify" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">灰度发布与容灾镜像：qiix.netlify.app 的影子使命</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：海外节点 / 运维</span></div>
+            </div>
+            <div class="post-content">
+                <p>优秀的系统架构永远不会把鸡蛋放在同一个篮子里。<b>qiix.netlify.app</b> 字母顺序的微调暗示了它与主站之间相辅相成的孪生兄弟关系——它就是主节点的“影子镜像”。</p>
+                <p>在日常运维中，该镜像节点主要承载着两大使命：第一，<b>灰度测试台</b>。所有尚未完善、或可能引发系统崩溃的全新 H5 实验特性会优先部署在这里，供部分先锋测试者访问评估；第二，<b>热备份容灾</b>。一旦主节点因突发状况遭遇限制，该节点能立刻平滑顶上。</p>
+                <p>两套独立的 Netlify 分发链路相互交织，为 QXII Space 在海外的稳定拓扑提供了坚不可摧的双保险。这也是个人开发者走向量产级运维水准的重要标志。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-qxii-ct" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">怀旧与自由的重奏：探索 qxii.ct.ws 传统分布式虚拟空间</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：海外节点 / 自由Web</span></div>
+            </div>
+            <div class="post-content">
+                <p>在云原生大行其道的今天，<b>qxii.ct.ws</b> 显得独特且带着一丝极客的浪漫。它部署在久负盛名的传统免费 PHP/PHP 空间集群上，承载着探索网络早期自由生态的责任。</p>
+                <blockquote>“在被巨头垄断的现代网络中，向古典虚拟主机致敬是一种浪漫的叛逆。”</blockquote>
+                <p>不同于静态托管，该节点保留了对服务端环境的动态解析能力。在这里，代码拥有极高的原生掌控度，可以非常方便地调试传统的小型脚本、连接基础轻量数据库，或者是发布一些不受复杂框架束缚的独立 HTML 文件。</p>
+                <p>虽然该服务器在国际带宽和硬件配置上无法与现代大厂抗衡，偶尔也需要特定的代理工具来平滑加载，但它对传统 Web 技术栈纯粹性的保留，使其成为了这片博客矩阵里不可取代的复古主义自留地。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-door-workers" class="page">
+        <div class="post-container">
+            <div class="post-header">
+                <a href="#explore" class="post-back">← 返回网址导航</a>
+                <h1 class="post-title">全球边缘计算网关：深入 door.qxii.workers.dev 的无服务器世界</h1>
+                <div class="post-meta"><span>作者：QXII</span> <span>分类：海外节点 / Serverless</span></div>
+            </div>
+            <div class="post-content">
+                <p>最后，让我们来看看技术矩阵中最具科技感的一环：运行在 Cloudflare V8 引擎上的 <b>door.qxii.workers.dev</b>。这是一个彻底告别传统操作系统概念的无服务器（Serverless）网关。</p>
+                <p>常规的网页往往需要服务器先去读取硬盘文件再返回给用户，而 Cloudflare Workers 将代码直接注入到全球数百个数据中心的内存当中。这意味着无论访问者身处伦敦、纽约还是东京，请求都将在距离其最近的边缘网络节点中以不足1毫秒的时间直接被拦截并完成响应。</p>
+                <p>在这个高维度的“大门（door）”后面，隐藏着灵活的动态重定向逻辑和请求头过滤机制。它是海外流量流向各个分支节点的超高速智能空中调度台。掌握边缘计算，即掌握了面向未来 Web 生态的主动权。</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 QXII 's Space • 基于原生单页响应式架构设计</p>
+    </footer>
+
+    <script>
+        // 高性能 SPA 路由核心拦截器
+        function handleRoute() {
+            // 获取当前 URL 的 Hash 值，若无则默认为 #home
+            let hash = window.location.hash || '#home';
+            
+            // 找出所有 class 包含 "page" 的节点并隐藏
+            const pages = document.querySelectorAll('.page');
+            let matched = false;
+            
+            pages.forEach(page => {
+                if ('#' + page.id === hash) {
+                    page.classList.add('active');
+                    matched = true;
+                } else {
+                    page.classList.remove('active');
+                }
+            });
+
+            // 增强防错：如果乱填 Hash 路由，默认打回主页
+            if (!matched) {
+                document.getElementById('home').classList.add('active');
+                hash = '#home';
+            }
+
+            // 同步更新顶部导航栏的 active 选中视觉状态
+            const navHome = document.getElementById('nav-home');
+            const navExplore = document.getElementById('nav-explore');
+            
+            if (hash === '#home') {
+                navHome.classList.add('active');
+                navExplore.classList.remove('active');
+            } else if (hash === '#explore') {
+                navHome.classList.remove('active');
+                navExplore.classList.add('active');
+            } else {
+                // 如果正在阅读文章，导航栏均不处于基础高亮状态
+                navHome.classList.remove('active');
+                navExplore.classList.remove('active');
+            }
+
+            // 核心细节：切换独立页面后，页面视口平滑滚动回最顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 绑定全局路由监听事件
+        window.addEventListener('hashchange', handleRoute);
+        window.addEventListener('load', handleRoute);
+    </script>
+</body>
+</html>
