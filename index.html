@@ -1131,23 +1131,25 @@
             <button class="btn btn-secondary" id="admin-logout-btn" style="display: none;"><i class="fa-solid fa-right-from-bracket"></i> 登出</button>
         </h2>
 
-        <!-- Supabase 环境变量面板 (在原页面核心增加，保障零门槛初始化) -->
-        <div class="card" style="border-color: rgba(142, 45, 226, 0.3); background: rgba(142, 45, 226, 0.02);">
-            <span class="section-label" style="background: rgba(142, 45, 226, 0.1); color: var(--color-ai-purple);"><i class="fa-solid fa-database"></i> Supabase Connection / 云端数据库设置</span>
-            <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 15px;">输入您的 Supabase 配置信息，系统会自动持久化存储于本地。未连接时将渲染默认预设离线数据。</p>
-            <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
-                <div>
-                    <label class="form-label" style="font-size: 12px;">Supabase Project URL</label>
-                    <input type="text" id="supabase-url-input" class="form-control" style="padding: 10px 14px;" placeholder="例如: https://xyz.supabase.co">
+        <!-- Supabase 环境变量面板 (仅管理员验证后可见) -->
+        <div id="supabase-config-panel" style="display: none;">
+            <div class="card" style="border-color: rgba(142, 45, 226, 0.3); background: rgba(142, 45, 226, 0.02);">
+                <span class="section-label" style="background: rgba(142, 45, 226, 0.1); color: var(--color-ai-purple);"><i class="fa-solid fa-database"></i> Supabase Connection / 云端数据库设置</span>
+                <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 15px;">输入您的 Supabase 配置信息，系统会自动持久化存储于本地。未连接时将渲染默认预设离线数据。</p>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div>
+                        <label class="form-label" style="font-size: 12px;">Supabase Project URL</label>
+                        <input type="text" id="supabase-url-input" class="form-control" style="padding: 10px 14px;" placeholder="例如: https://xyz.supabase.co">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 12px;">Supabase Anon Key</label>
+                        <input type="password" id="supabase-key-input" class="form-control" style="padding: 10px 14px;" placeholder="粘贴你的 public anon key">
+                    </div>
                 </div>
-                <div>
-                    <label class="form-label" style="font-size: 12px;">Supabase Anon Key</label>
-                    <input type="password" id="supabase-key-input" class="form-control" style="padding: 10px 14px;" placeholder="粘贴你的 public anon key">
-                </div>
+                <button class="btn btn-ai" id="btn-save-supabase" style="width: 100%; justify-content: center;">
+                    <i class="fa-solid fa-floppy-disk"></i> 保存并尝试连接
+                </button>
             </div>
-            <button class="btn btn-ai" id="btn-save-supabase" style="width: 100%; justify-content: center;">
-                <i class="fa-solid fa-floppy-disk"></i> 保存并尝试连接
-            </button>
         </div>
 
         <!-- 未登录视图 -->
@@ -1287,9 +1289,17 @@
         document.getElementById('supabase-key-input').value = SUPABASE_ANON_KEY;
 
         let supabaseClient = null;
+        let messagePollingTimer = null;
         if (SUPABASE_URL && SUPABASE_ANON_KEY) {
             try {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    realtime: {
+                        params: {
+                            eventsPerSecond: 10
+                        }
+                    }
+                });
+                console.log("[Realtime] Supabase 客户端初始化完成");
             } catch (err) {
                 console.error("Supabase初始化失败:", err);
             }
@@ -1416,7 +1426,13 @@
             SUPABASE_ANON_KEY = keyVal;
 
             try {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    realtime: {
+                        params: {
+                            eventsPerSecond: 10
+                        }
+                    }
+                });
                 showToast("Supabase 配置保存成功！正在建立同步通道...", "success");
                 loadCloudData();
             } catch (err) {
@@ -1429,15 +1445,18 @@
             const loginView = document.getElementById('admin-login-view');
             const dashboardView = document.getElementById('admin-dashboard-view');
             const logoutBtn = document.getElementById('admin-logout-btn');
+            const supabaseConfigPanel = document.getElementById('supabase-config-panel');
 
             if (state.isAdmin) {
                 loginView.style.display = 'none';
                 dashboardView.style.display = 'block';
                 logoutBtn.style.display = 'inline-flex';
+                supabaseConfigPanel.style.display = 'block';
             } else {
                 loginView.style.display = 'block';
                 dashboardView.style.display = 'none';
                 logoutBtn.style.display = 'none';
+                supabaseConfigPanel.style.display = 'none';
             }
         }
 
@@ -1483,12 +1502,14 @@
                     .from('blogs')
                     .select('*')
                     .order('timestamp', { ascending: false });
-                
+
                 if (error) throw error;
                 state.blogs = blogs && blogs.length > 0 ? blogs : fallbackBlogs;
+                renderBlogs();
             } catch (err) {
                 console.warn("博客表拉取失败，可能是表未创建，载入默认博文:", err.message);
                 state.blogs = fallbackBlogs;
+                renderBlogs();
             }
 
             // B. 拉取导航矩阵
@@ -1496,12 +1517,14 @@
                 let { data: explores, error } = await supabaseClient
                     .from('explores')
                     .select('*');
-                
+
                 if (error) throw error;
                 state.explores = explores && explores.length > 0 ? explores : fallbackExplores;
+                renderExplores();
             } catch (err) {
                 console.warn("矩阵表拉取失败，载入默认配置:", err.message);
                 state.explores = fallbackExplores;
+                renderExplores();
             }
 
             // C. 留言板拉取
@@ -1510,9 +1533,10 @@
                     .from('comments')
                     .select('*')
                     .order('timestamp', { ascending: false });
-                
+
                 if (error) throw error;
                 state.comments = comments || [];
+                renderComments();
             } catch (err) {
                 console.warn("留言表拉取失败:", err.message);
             }
@@ -1524,9 +1548,10 @@
                     .select('*')
                     .order('timestamp', { ascending: true })
                     .limit(50);
-                
+
                 if (error) throw error;
                 state.chatMessages = chats || [];
+                renderChatMessages();
             } catch (err) {
                 console.warn("群聊表拉取失败:", err.message);
             }
@@ -1545,17 +1570,89 @@
                 console.warn("快照表拉取失败:", err.message);
             }
 
-            renderAll();
+            renderRevisions();
 
             // 注册 Supabase 数据库实时变更广播 (Realtime)
+            supabaseClient.removeAllChannels();
             supabaseClient
                 .channel('db-all-changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'blogs' }, () => { fetchTable('blogs'); })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'explores' }, () => { fetchTable('explores'); })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => { fetchTable('comments'); })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'group_posts' }, () => { fetchTable('group_posts'); })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'snapshots' }, () => { fetchTable('snapshots'); })
-                .subscribe();
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'blogs' }, (payload) => { console.log('[Realtime] blogs 变更:', payload.eventType); fetchTable('blogs'); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'explores' }, (payload) => { console.log('[Realtime] explores 变更:', payload.eventType); fetchTable('explores'); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, (payload) => { console.log('[Realtime] comments 变更:', payload.eventType); fetchTable('comments'); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'group_posts' }, (payload) => { console.log('[Realtime] group_posts 变更:', payload.eventType); fetchTable('group_posts'); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'snapshots' }, (payload) => { console.log('[Realtime] snapshots 变更:', payload.eventType); fetchTable('snapshots'); })
+                .subscribe((status, err) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('[Realtime] 订阅成功，正在监听数据库变更');
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.error('[Realtime] 订阅失败:', err);
+                    } else if (status === 'TIMED_OUT') {
+                        console.warn('[Realtime] 订阅超时，将自动重试');
+                    } else {
+                        console.log('[Realtime] 状态:', status);
+                    }
+                });
+
+            // 增量轮询兜底：每 5 秒只拉取比本地最新记录更新的数据，无新数据不渲染
+            if (messagePollingTimer) clearInterval(messagePollingTimer);
+            messagePollingTimer = setInterval(() => {
+                if (supabaseClient) pollNewMessages();
+            }, 5000);
+        }
+
+        async function pollNewMessages() {
+            try {
+                // 留言：游标 = 本地最新的 timestamp（降序排列，第一条即最新）
+                // 如果本地为空则全量拉取，以捕获初始加载后新增的数据
+                if (state.comments.length === 0) {
+                    const { data: all } = await supabaseClient
+                        .from('comments')
+                        .select('*')
+                        .order('timestamp', { ascending: false });
+                    if (all && all.length > 0) {
+                        state.comments = all;
+                        renderComments();
+                    }
+                } else {
+                    const lastCommentTs = state.comments[0].timestamp;
+                    const { data: newComments } = await supabaseClient
+                        .from('comments')
+                        .select('*')
+                        .gt('timestamp', lastCommentTs)
+                        .order('timestamp', { ascending: false });
+                    if (newComments && newComments.length > 0) {
+                        state.comments = [...newComments, ...state.comments];
+                        renderComments();
+                    }
+                }
+
+                // 群聊：游标 = 本地最新的 timestamp（升序排列，最后一条即最新）
+                if (state.chatMessages.length === 0) {
+                    const { data: all } = await supabaseClient
+                        .from('group_posts')
+                        .select('*')
+                        .order('timestamp', { ascending: true })
+                        .limit(50);
+                    if (all && all.length > 0) {
+                        state.chatMessages = all;
+                        renderChatMessages();
+                    }
+                } else {
+                    const lastChatTs = state.chatMessages[state.chatMessages.length - 1].timestamp;
+                    const { data: newChats } = await supabaseClient
+                        .from('group_posts')
+                        .select('*')
+                        .gt('timestamp', lastChatTs)
+                        .order('timestamp', { ascending: true })
+                        .limit(50);
+                    if (newChats && newChats.length > 0) {
+                        state.chatMessages = [...state.chatMessages, ...newChats].slice(-50);
+                        renderChatMessages();
+                    }
+                }
+            } catch (_) {
+                // 静默失败，下个周期重试
+            }
         }
 
         // 统一小规模按表轻量同步
@@ -1777,13 +1874,25 @@
                 let repliesHtml = '';
                 if (c.replies && c.replies.length > 0) {
                     repliesHtml += '<div class="replies-container">';
-                    c.replies.forEach((r) => {
+                    c.replies.forEach((r, rIndex) => {
                         const rDate = formatDate(r.timestamp);
                         repliesHtml += `
-                            <div class="reply-item">
-                                <div class="reply-header">
-                                    <span class="reply-nickname">${r.nickname}</span>
-                                    <span class="reply-time">${rDate}</span>
+                            <div class="reply-item" style="position:relative;">
+                                <div class="reply-header" style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span class="reply-nickname">${r.nickname}</span>
+                                        <span class="reply-time">${rDate}</span>
+                                    </div>
+                                    ${state.isAdmin ? `
+                                    <button onclick="deleteReply('${c.id}', ${rIndex})" title="删除此回复" style="
+                                        border:none; background:rgba(255,69,58,0.08); color:var(--color-danger);
+                                        width:22px; height:22px; border-radius:11px; cursor:pointer;
+                                        display:inline-flex; align-items:center; justify-content:center;
+                                        font-size:10px; transition:var(--transition-quick); flex-shrink:0;
+                                    " onmouseover="this.style.background='rgba(255,69,58,0.18)'"
+                                       onmouseout="this.style.background='rgba(255,69,58,0.08)'">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>` : ''}
                                 </div>
                                 <div class="reply-body">${r.body}</div>
                             </div>
@@ -1799,9 +1908,21 @@
                                 <span class="comment-nickname">${c.author}</span>
                                 <span class="comment-time">${formattedDate}</span>
                             </div>
-                            <button class="reply-box-trigger" onclick="showReplyForm('${c.id}')">
-                                <i class="fa-solid fa-reply"></i> 回复
-                            </button>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <button class="reply-box-trigger" onclick="showReplyForm('${c.id}')">
+                                    <i class="fa-solid fa-reply"></i> 回复
+                                </button>
+                                ${state.isAdmin ? `
+                                <button onclick="deleteComment('${c.id}')" title="删除留言" style="
+                                    border:none; background:rgba(255,69,58,0.08); color:var(--color-danger);
+                                    width:26px; height:26px; border-radius:13px; cursor:pointer;
+                                    display:inline-flex; align-items:center; justify-content:center;
+                                    font-size:11px; transition:var(--transition-quick);
+                                " onmouseover="this.style.background='rgba(255,69,58,0.18)'"
+                                   onmouseout="this.style.background='rgba(255,69,58,0.08)'">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>` : ''}
+                            </div>
                         </div>
                         <div class="comment-body">${c.text}</div>
                         
@@ -1835,13 +1956,25 @@
                 const isMineClass = (msg.sender === document.getElementById('chat-sender').value && msg.sender !== "") ? "mine" : "";
 
                 html += `
-                    <div class="chat-bubble ${isMineClass}">
+                    <div class="chat-bubble ${isMineClass}" style="position:relative;">
                         <div class="chat-bubble-meta">
                             <span class="chat-bubble-sender">${msg.sender}</span>
                             <span>${formattedTime}</span>
                         </div>
                         <div class="chat-bubble-text">${msg.text}</div>
                         ${msg.image ? `<img class="chat-bubble-image" src="${msg.image}" alt="群聊图片" onclick="openImageLightBox('${msg.image}')">` : ''}
+                        ${state.isAdmin ? `
+                        <button onclick="deleteChatMessage('${msg.id}')" title="删除此条消息" style="
+                            position:absolute; top:8px; right:8px;
+                            border:none; background:rgba(255,69,58,0.1); color:var(--color-danger);
+                            width:24px; height:24px; border-radius:12px; cursor:pointer;
+                            display:flex; align-items:center; justify-content:center;
+                            font-size:10px; transition:var(--transition-quick);
+                            opacity:0.6;
+                        " onmouseover="this.style.opacity='1';this.style.background='rgba(255,69,58,0.2)'"
+                           onmouseout="this.style.opacity='0.6';this.style.background='rgba(255,69,58,0.1)'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>` : ''}
                     </div>
                 `;
             });
@@ -1908,6 +2041,7 @@
                 }]);
 
                 document.getElementById('comment-text').value = '';
+                await fetchTable('comments');
                 showToast("留言发布成功！", "success");
             } catch (err) {
                 console.error("留言出错:", err);
@@ -1956,6 +2090,7 @@
                 
                 replyTextInput.value = '';
                 document.getElementById(`reply-form-wrap-${commentId}`).style.display = 'none';
+                await fetchTable('comments');
                 showToast("回复成功！", "success");
             } catch (err) {
                 console.error("回复发送失败:", err);
@@ -2042,6 +2177,7 @@
 
                 document.getElementById('chat-content').value = '';
                 removeImagePreview();
+                await fetchTable('group_posts');
                 showToast("广场消息发送成功！", "success");
             } catch (err) {
                 console.error("群聊发送失败:", err);
@@ -2052,6 +2188,75 @@
         window.openImageLightBox = function(base64Str) {
             const w = window.open();
             w.document.write(`<img src="${base64Str}" style="max-width:100%; display:block; margin:20px auto; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.15)">`);
+        };
+
+        // 管理员：删除广场消息
+        window.deleteChatMessage = async function(msgId) {
+            if (!state.isAdmin) {
+                showToast("无管理员操作权限！", "error");
+                return;
+            }
+            if (!supabaseClient) {
+                showToast("离线模式无法删除", "error");
+                return;
+            }
+            const confirmed = await customConfirm("确定删除此条广场消息？", "该操作将从云端永久移除此消息。");
+            if (!confirmed) return;
+            try {
+                await supabaseClient.from('group_posts').delete().eq('id', msgId);
+                await createHistorySnapshot("删除广场消息", `抹除了广场消息 [${msgId}]`);
+                showToast("广场消息已删除！", "success");
+            } catch (err) {
+                console.error("删除广场消息失败:", err);
+                showToast("删除失败，请查看控制台日志", "error");
+            }
+        };
+
+        // 管理员：删除整条留言（含所有回复）
+        window.deleteComment = async function(commentId) {
+            if (!state.isAdmin) {
+                showToast("无管理员操作权限！", "error");
+                return;
+            }
+            if (!supabaseClient) {
+                showToast("离线模式无法删除", "error");
+                return;
+            }
+            const confirmed = await customConfirm("确定删除此条留言？", "将同时删除该留言下的所有回复，此操作不可撤销。");
+            if (!confirmed) return;
+            try {
+                await supabaseClient.from('comments').delete().eq('id', commentId);
+                await createHistorySnapshot("删除留言", `抹除了留言 [${commentId}]`);
+                showToast("留言已永久删除！", "success");
+            } catch (err) {
+                console.error("删除留言失败:", err);
+                showToast("删除失败，请查看控制台日志", "error");
+            }
+        };
+
+        // 管理员：删除某条留言下的指定回复
+        window.deleteReply = async function(commentId, replyIndex) {
+            if (!state.isAdmin) {
+                showToast("无管理员操作权限！", "error");
+                return;
+            }
+            if (!supabaseClient) {
+                showToast("离线模式无法删除", "error");
+                return;
+            }
+            const confirmed = await customConfirm("确定删除此条回复？", "该回复将从云端永久移除。");
+            if (!confirmed) return;
+            try {
+                let { data: comms } = await supabaseClient.from('comments').select('replies').eq('id', commentId).single();
+                const repliesArr = comms?.replies || [];
+                repliesArr.splice(replyIndex, 1);
+                await supabaseClient.from('comments').update({ replies: repliesArr }).eq('id', commentId);
+                await createHistorySnapshot("删除回复", `抹除了留言 [${commentId}] 下第 ${replyIndex + 1} 条回复`);
+                showToast("回复已删除！", "success");
+            } catch (err) {
+                console.error("删除回复失败:", err);
+                showToast("删除失败，请查看控制台日志", "error");
+            }
         };
 
 
