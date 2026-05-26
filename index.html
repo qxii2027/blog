@@ -1224,8 +1224,8 @@
 
                     <!-- 动态链接专有字段 -->
                     <div class="form-group" id="url-field-group" style="display: none;">
-                        <label class="form-label">https://ldwoxagfawfvsxacsozi.supabase.co</label>
-                        <input type="url" id="content-url" class="form-control" placeholder="sb_publishable_PQCxgH-mmq4HfC-AiR3X_w_fjvzLk7t">
+                        <label class="form-label">站点链接 URL</label>
+                        <input type="url" id="content-url" class="form-control" placeholder="https://example.com">
                     </div>
 
                     <div class="form-group" id="tag-field-group" style="display: none;">
@@ -1308,7 +1308,7 @@
                         }
                     }
                 });
-                console.log("[Realtime] Supabase 客户端初始化完成");
+                // Supabase 初始化完成
             } catch (err) {
                 console.error("Supabase初始化失败:", err);
             }
@@ -1483,19 +1483,65 @@
             }
         }
 
+        // ==========================================
+        // 安全辅助函数：防止 XSS 注入与 URL 注入
+        // ==========================================
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#x27;');
+        }
+
+        function sanitizeUrl(url) {
+            try {
+                const u = new URL(url);
+                if (u.protocol === 'http:' || u.protocol === 'https:') return url;
+                return '#';
+            } catch {
+                return '#';
+            }
+        }
+
+        // 登录暴力破解防护：最多允许 5 次失败，锁定 5 分钟
+        const LOGIN_MAX_ATTEMPTS = 5;
+        const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+        let loginAttempts = 0;
+        let loginLockedUntil = 0;
+
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
+
+            const now = Date.now();
+            if (now < loginLockedUntil) {
+                const remaining = Math.ceil((loginLockedUntil - now) / 1000);
+                showToast(`登录已被暂时锁定，请 ${remaining} 秒后再试！`, "error");
+                return;
+            }
+
             const token = document.getElementById('login-token').value;
             if (!token) return;
 
             if (token === "qxii2026") {
+                loginAttempts = 0;
                 state.isAdmin = true;
                 sessionStorage.setItem('qxii_admin_authed', 'true');
                 refreshAdminUI();
                 renderAll();
                 showToast("管理员权限验证通过，欢迎回来！", "success");
             } else {
-                showToast("密钥校验失败，请核对凭证！", "error");
+                loginAttempts++;
+                if (loginAttempts >= LOGIN_MAX_ATTEMPTS) {
+                    loginLockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
+                    loginAttempts = 0;
+                    showToast("连续错误次数过多，账户已临时锁定 5 分钟！", "error");
+                } else {
+                    const remaining = LOGIN_MAX_ATTEMPTS - loginAttempts;
+                    showToast(`密钥校验失败，还剩 ${remaining} 次机会！`, "error");
+                }
             }
         });
 
@@ -1828,8 +1874,8 @@
                             <span class="section-label">${formattedDate}</span>
                             ${showAdminBadge ? '<span class="admin-badge"><i class="fa-solid fa-user-shield"></i> 管理员</span>' : ''}
                         </div>
-                        <h3 onclick="location.hash='#post-${post.id}'">${post.title}</h3>
-                        <p onclick="location.hash='#post-${post.id}'" style="color: var(--color-text-secondary); font-size: 15px;">${preview}</p>
+                        <h3 onclick="location.hash='#post-${post.id}'">${escapeHtml(post.title)}</h3>
+                        <p onclick="location.hash='#post-${post.id}'" style="color: var(--color-text-secondary); font-size: 15px;">${escapeHtml(preview)}</p>
                         
                         ${showAdminBadge ? `
                         <div class="admin-actions">
@@ -1857,12 +1903,12 @@
                 const card = `
                     <div class="nav-item">
                         <div>
-                            <h4>${item.title}</h4>
+                            <h4>${escapeHtml(item.title)}</h4>
                             <a href="#post-${item.id}" class="read-btn">阅读简介 →</a>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-                            <a href="${item.url}" target="_blank" style="text-decoration: none;">
-                                <span class="visit-tag">${item.tag || 'Visit'}</span>
+                            <a href="${sanitizeUrl(item.url)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                                <span class="visit-tag">${escapeHtml(item.tag || 'Visit')}</span>
                             </a>
                         </div>
                         
@@ -1903,7 +1949,7 @@
                             <div class="reply-item" style="position:relative;">
                                 <div class="reply-header" style="display:flex; justify-content:space-between; align-items:center;">
                                     <div style="display:flex; align-items:center; gap:8px;">
-                                        <span class="reply-nickname">${r.nickname}</span>
+                                        <span class="reply-nickname">${escapeHtml(r.nickname)}</span>
                                         <span class="reply-time">${rDate}</span>
                                     </div>
                                     ${state.isAdmin ? `
@@ -1917,7 +1963,7 @@
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>` : ''}
                                 </div>
-                                <div class="reply-body">${r.body}</div>
+                                <div class="reply-body">${escapeHtml(r.body)}</div>
                             </div>
                         `;
                     });
@@ -1928,7 +1974,7 @@
                     <div class="guestbook-item">
                         <div class="comment-header">
                             <div class="comment-meta">
-                                <span class="comment-nickname">${c.author}</span>
+                                <span class="comment-nickname">${escapeHtml(c.author)}</span>
                                 <span class="comment-time">${formattedDate}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:8px;">
@@ -1947,7 +1993,7 @@
                                 </button>` : ''}
                             </div>
                         </div>
-                        <div class="comment-body">${c.text}</div>
+                        <div class="comment-body">${escapeHtml(c.text)}</div>
                         
                         ${repliesHtml}
 
@@ -1981,11 +2027,11 @@
                 html += `
                     <div class="chat-bubble ${isMineClass}" style="position:relative;">
                         <div class="chat-bubble-meta">
-                            <span class="chat-bubble-sender">${msg.sender}</span>
+                            <span class="chat-bubble-sender">${escapeHtml(msg.sender)}</span>
                             <span>${formattedTime}</span>
                         </div>
-                        <div class="chat-bubble-text">${msg.text}</div>
-                        ${msg.image ? `<img class="chat-bubble-image" src="${msg.image}" alt="群聊图片" onclick="openImageLightBox('${msg.image}')">` : ''}
+                        <div class="chat-bubble-text">${escapeHtml(msg.text)}</div>
+                        ${msg.image ? `<img class="chat-bubble-image" src="${sanitizeUrl(msg.image)}" alt="群聊图片" onclick="openImageLightBox('${sanitizeUrl(msg.image)}')">` : ''}
                         ${state.isAdmin ? `
                         <button onclick="deleteChatMessage('${msg.id}')" title="删除此条消息" style="
                             position:absolute; top:8px; right:8px;
@@ -2024,7 +2070,7 @@
                         <div class="revision-card">
                             <div class="revision-info">
                                 <span class="revision-time"><i class="fa-regular fa-clock"></i> ${revDate}</span>
-                                <span class="revision-details">动作：${rev.action} | 详情：${rev.detail}</span>
+                                <span class="revision-details">动作：${escapeHtml(rev.action)} | 详情：${escapeHtml(rev.detail)}</span>
                             </div>
                             <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px;" onclick="restoreRevision('${rev.id}')">
                                 <i class="fa-solid fa-arrow-rotate-left"></i> 应用此配置
@@ -2565,10 +2611,10 @@
                     document.getElementById('post-view').classList.add('active');
                     document.getElementById('post-title').innerText = explore.title;
                     document.getElementById('post-body').innerHTML = `
-                        <p>${explore.body}</p>
+                        <p>${escapeHtml(explore.body)}</p>
                         <p style="margin-top:24px;">
-                            <a href="${explore.url}" target="_blank" class="btn">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> 访问该站点 [${explore.tag || 'Visit'}]
+                            <a href="${sanitizeUrl(explore.url)}" target="_blank" rel="noopener noreferrer" class="btn">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> 访问该站点 [${escapeHtml(explore.tag || 'Visit')}]
                             </a>
                         </p>
                     `;
